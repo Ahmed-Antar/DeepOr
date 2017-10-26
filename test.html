@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html ng-app="" ng-controller="myCtrl" data-ng-init="readCSV()">
+<head>
+ <meta charset="UTF-8">
+ <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+ <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+<!--<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/css/bootstrap.min.css" integrity="sha384-rwoIResjU2yc3z8GV/NPeZWAv56rSmLldC3R/AZzGRnGxQQKnKkoFVhFQhNUwEyJ" crossorigin="anonymous">-->
+<script src="https://code.jquery.com/jquery-3.1.1.slim.min.js" integrity="sha384-A7FZj7v+d/sdmMqp/nOQwliLvUsJfDHW+k9Omg/a/EheAdgtzNs3hpfag6Ed950n" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
+</head>
+<body ng-init="readCSV2()">
+<div class="input-group">
+   
+</div>
+<table class="table table-sm">
+  <thead>
+    <tr>
+      <th><h5><small>Date</h5></small></th>
+      <th><h5><small>Entrée</h5></small></th>
+      <th><h5><small>Sortie</h5></small></th>
+      <th><h5><small>Opération</h5></small></th>
+	  <th><h5><small>Patient</h5></small></th>
+	  <th><h5><small>Chirurgien</h5></small></th>
+	  <th><h5><small>Durée</h5></small></th>
+	  <th><h5><small>Spécificité</h5></small></th>
+	  <th></th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr ng-repeat = "result in results">
+      <th>{{DATE | date}}</th>
+      <td><span class="glyphicon glyphicon-triangle-right"></span>{{result.STARTTIME}}</td>
+	  <td>{{result.ENDTIME}}<span class="glyphicon glyphicon-triangle-left"></span></td>
+	  <td>{{result.SURGERYID}}</td>
+      <td><span class="glyphicon glyphicon-user"></span>{{result.PATIENTID}}</td>
+      <td><img src="img.png">{{result.SURGEONID}}</td>
+	  <td>1h40</td>
+	  <td><span class="label label-danger">18 minutes de retard</span></td>
+	  <td><h5><small><a href="#">Détail</a></small></h5></td>
+    </tr>
+   
+  </tbody>
+</table>
+
+
+<script>
+function myCtrl($scope, $http) {
+	$scope.readCSV = function() {
+		// http get request to read CSV file content
+		$http.get('Actual Day.csv').success($scope.processData);
+	};
+	
+	$scope.readCSV2 = function() {
+		// http get request to read CSV file content
+		$http.get('Theorical Schedule.csv').success($scope.processData2);
+	};
+	
+	$scope.atr = angular.toJson($scope.processData);
+
+	$scope.processData = function(allText) {
+		// split content based on new line
+		var allTextLines = allText.split(/\r\n|\n/);
+		var headers = allTextLines[0].split(',');
+		var lines = [];
+
+		for ( var i = 0; i < allTextLines.length; i++) {
+			// split content based on comma
+			var data = allTextLines[i].split(',');
+			if (data.length == headers.length) {
+				var tarr = [];
+				for ( var j = 0; j < headers.length; j++) {
+					tarr.push(data[j]);
+				}
+				lines.push(tarr);
+			}
+		}
+		$scope.data = lines;
+
+	};
+	
+	
+	$scope.processData2 = function(allText2) {
+		// split content based on new line
+		var lines=allText2.split("\n");
+
+        var result = [];
+
+        var headers=lines[0].split(",");
+
+        for(var i=1;i<lines.length;i++){
+
+	         var obj = {};
+	         var currentline=lines[i].split(",");
+
+	         for(var j=0;j<headers.length;j++){
+		         obj[headers[j]] = currentline[j];
+	         }
+
+	          result.push(obj);
+		
+	         }
+
+  
+ <!-- result = JSON.parse(JSON.stringify(result).replace(/\s(?=\w+":)/g, "")); -->
+//console.log(result);
+  
+  //return result; //JavaScript object
+  $scope.results = result;//JSON
+  
+  //To convert DATE field to date type:
+  for(var k=0;k<$scope.results.length;k++){
+    $scope.results[k].DATE= new Date($scope.results[k].DATE);			 
+     
+  }
+ 
+  
+  
+}
+
+		//$scope.operations = JSON.parse(JSON.stringify($scope.data2));
+		//$scope.today = new Date($scope.results[1].DATE);
+		$scope.DATE = new Date('10/18/2017');
+		//$scope.test =  $scope.yaa[1];
+		
+
+	};
+	
+	
+	
+	
+
+
+
+
+
+
+</script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.32/angular.min.js"></script>
+</body>
+</html>
