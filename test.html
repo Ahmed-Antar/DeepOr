@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html ng-app="" ng-controller="myCtrl" data-ng-init="readCSV()">
+<html ng-app="" ng-controller="myCtrl" data-ng-init="readCSV2()">
 <head>
  <meta charset="UTF-8">
  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
@@ -9,9 +9,9 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tether/1.4.0/js/tether.min.js" integrity="sha384-DztdAPBWPRXSA/3eYEEUWrWCy7G5KFbe8fFjk5JAIxUYHKkDx6Qin1DkWx51bBrb" crossorigin="anonymous"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script>
 </head>
-<body ng-init="readCSV2()">
+<body ng-init="readCSV()">
 <div class="input-group">
-   
+{{resultsTheo}}
 </div>
 <table class="table table-sm">
   <thead>
@@ -29,57 +29,69 @@
   </thead>
   <tbody>
     <tr ng-repeat = "result in results">
-      <th>{{DATE | date}}</th>
+      <th>{{ result.DATE | date : "d MMM." }}</th>
       <td><span class="glyphicon glyphicon-triangle-right"></span>{{result.STARTTIME}}</td>
 	  <td>{{result.ENDTIME}}<span class="glyphicon glyphicon-triangle-left"></span></td>
 	  <td>{{result.SURGERYID}}</td>
       <td><span class="glyphicon glyphicon-user"></span>{{result.PATIENTID}}</td>
       <td><img src="img.png">{{result.SURGEONID}}</td>
-	  <td>1h40</td>
-	  <td><span class="label label-danger">18 minutes de retard</span></td>
+	  <td>{{result.Duration}}</td>
+	  <td><span class="label label-danger" ng-if="result.Late!==null"><strong>{{result.Late}}</strong> min de retard</span><span class="label label-warning" ng-if="result.Avance!==null"><strong>{{result.Avance}}</strong> min de fin précoce</span><span class="label label-info" ng-if="result.InTime!==null">comme prévu</span></td>
 	  <td><h5><small><a href="#">Détail</a></small></h5></td>
     </tr>
-   
+
   </tbody>
 </table>
 
 
 <script>
 function myCtrl($scope, $http) {
+  $scope.results = {};
+  $scope.resultsTheo={};
 	$scope.readCSV = function() {
 		// http get request to read CSV file content
-		$http.get('Actual Day.csv').success($scope.processData);
+		$http.get('Actual Day.csv').success($scope.processData2);
 	};
-	
+
 	$scope.readCSV2 = function() {
 		// http get request to read CSV file content
-		$http.get('Theorical Schedule.csv').success($scope.processData2);
+		$http.get('Theorical Schedule.csv').success($scope.processData);
 	};
-	
+
 	$scope.atr = angular.toJson($scope.processData);
 
-	$scope.processData = function(allText) {
-		// split content based on new line
-		var allTextLines = allText.split(/\r\n|\n/);
-		var headers = allTextLines[0].split(',');
-		var lines = [];
+  $scope.processData = function(allText) {
+    // split content based on new line
+    var lines=allText.split("\n");
 
-		for ( var i = 0; i < allTextLines.length; i++) {
-			// split content based on comma
-			var data = allTextLines[i].split(',');
-			if (data.length == headers.length) {
-				var tarr = [];
-				for ( var j = 0; j < headers.length; j++) {
-					tarr.push(data[j]);
-				}
-				lines.push(tarr);
-			}
-		}
-		$scope.data = lines;
+        var resulttheo = [];
+
+        var headers=lines[0].split(",");
+
+        for(var i=1;i<lines.length;i++){
+
+           var obj = {};
+           var currentline=lines[i].split(",");
+
+           for(var j=0;j<headers.length;j++){
+             obj[headers[j]] = currentline[j];
+           }
+
+            resulttheo.push(obj);
+
+           }
+
+
+ <!-- resulttheo = JSON.parse(JSON.stringify(resulttheo).replace(/\s(?=\w+":)/g, "")); -->
+//console.log(result);
+
+  //return result; //JavaScript object
+  $scope.resultsTheo= resulttheo;//JSON
+  console.log($scope.results);
 
 	};
-	
-	
+
+
 	$scope.processData2 = function(allText2) {
 		// split content based on new line
 		var lines=allText2.split("\n");
@@ -98,37 +110,135 @@ function myCtrl($scope, $http) {
 	         }
 
 	          result.push(obj);
-		
+
 	         }
 
-  
+
  <!-- result = JSON.parse(JSON.stringify(result).replace(/\s(?=\w+":)/g, "")); -->
 //console.log(result);
-  
+
   //return result; //JavaScript object
   $scope.results = result;//JSON
-  
+
   //To convert DATE field to date type:
-  for(var k=0;k<$scope.results.length;k++){
-    $scope.results[k].DATE= new Date($scope.results[k].DATE);			 
-     
+  for(var k=0;k<$scope.results.length-1;k++){
+    $scope.results[k].DATE= new Date($scope.results[k].DATE);
+
+    if($scope.results[k].ENDTIME !=='undefined'){
+
+    var end =$scope.results[k].ENDTIME.split(':');
+    var start =$scope.results[k].STARTTIME.split(':');
+
+    var dend = new Date(); // creates a Date Object using the clients current time
+    var dstart = new Date();
+
+    dend.setHours  (+end[0]); // set Time accordingly, using implicit type coercion
+    dend.setMinutes( end[1]); // you can pass Number or String, it doesn't matter
+    dend.setSeconds('00');
+    //console.log('satrt:', dend);
+
+    dstart.setHours  (+start[0]); // set Time accordingly, using implicit type coercion
+    dstart.setMinutes( start[1]); // you can pass Number or String, it doesn't matter
+    dstart.setSeconds('00');
+    //console.log('end:', dstart);
+    var diff = $scope.DateDiff(dstart,dend);
+    $scope.results[k].Duration = ""+diff.hour+"h"+diff.min;
+
+    }
   }
- 
-  
-  
+
+//console.log($scope.results);
+//console.log($scope.resultsTheo);
+
+//entre theo et actual
+for(var l=0;l<$scope.results.length-1;l++){
+
+  if($scope.results[l].ENDTIME !=='undefined' && $scope.resultsTheo[l].ENDTIME !==0 ){
+
+  var Actual =$scope.results[l].ENDTIME.split(':');
+
+  var Theorical =$scope.resultsTheo[l].ENDTIME.split(':');
+
+  var endActual = new Date(); // creates a Date Object using the clients current time
+  var endTheorical = new Date();
+
+  endActual.setHours  (+Actual[0]); // set Time accordingly, using implicit type coercion
+  endActual.setMinutes( Actual[1]); // you can pass Number or String, it doesn't matter
+  endActual.setSeconds('00');
+  //console.log('satrt:', dend);
+
+  endTheorical.setHours  (+Theorical[0]); // set Time accordingly, using implicit type coercion
+  endTheorical.setMinutes( Theorical[1]); // you can pass Number or String, it doesn't matter
+  endTheorical.setSeconds('00');
+
+
+
+  if(endActual > endTheorical){
+    var diff = $scope.DateDiff(endTheorical,endActual);
+    $scope.results[l].Late = diff.min;
+    $scope.results[l].Avance = null;
+    $scope.results[l].InTime = null;
+    console.log("aaaaaaa333333jejdekd"+l);
+  }else if(endActual < endTheorical){
+    var diff = $scope.DateDiff(endActual,endTheorical);
+    $scope.results[l].Late = null;
+    $scope.results[l].InTime = null;
+    $scope.results[l].Avance = diff.min;
+    console.log("wééééééééééé"+l);
+  }else{
+    $scope.results[l].Late = null;
+    $scope.results[l].Avance = null;
+    $scope.results[l].InTime = 1;
+    console.log("gadgad"+l);
+  }
+  //console.log('end:', dstart);
+  // var diff = $scope.DateDiff(dstart,dend);
+  // $scope.results[k].Duration = ""+diff.hour+"h"+diff.min;
+
+  }
+}
+console.log($scope.results);
+
 }
 
 		//$scope.operations = JSON.parse(JSON.stringify($scope.data2));
 		//$scope.today = new Date($scope.results[1].DATE);
-		$scope.DATE = new Date('10/18/2017');
+		//$scope.DATE = new Date('10/18/2017');
 		//$scope.test =  $scope.yaa[1];
-		
+//Date diffrence:
+
+$scope.DateDiff = function dateDiff(date1, date2){
+    var diff = {}                           // Initialisation du retour
+    var tmp = date2 - date1;
+
+    tmp = Math.floor(tmp/1000);             // Nombre de secondes entre les 2 dates
+    diff.sec = tmp % 60;                    // Extraction du nombre de secondes
+
+    tmp = Math.floor((tmp-diff.sec)/60);    // Nombre de minutes (partie entière)
+    diff.min = tmp % 60;                    // Extraction du nombre de minutes
+
+    tmp = Math.floor((tmp-diff.min)/60);    // Nombre d'heures (entières)
+    diff.hour = tmp % 24;                   // Extraction du nombre d'heures
+
+    tmp = Math.floor((tmp-diff.hour)/24);   // Nombre de jours restants
+    diff.day = tmp;
+
+    return diff;
+    }
+
+
+
+
+// date1 = new Date('00-00-00 00:00:00');
+// date2 = new Date('00-00-00 22:16:57');
+// diff = dateDiff(date1, date2);
+// console.log("Entre le "+date1.toString()+" et "+date2.toString()+" il y a "+diff.day+" jours, "+diff.hour+" heures, "+diff.min+" minutes et "+diff.sec+" secondes");
 
 	};
-	
-	
-	
-	
+
+
+
+
 
 
 
